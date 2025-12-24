@@ -1,53 +1,82 @@
 import streamlit as st
 import time
+import random
 
 # --- CONFIGURACIÓN DE LA PÁGINA ---
 st.set_page_config(
-    page_title="¡Sorpresa para Mamá y Tata!",
+    page_title="¿Sorpresa o Broma?",
     page_icon="🎁",
-    layout="centered"
+    layout="centered" 
 )
 
-# --- ESTILOS CSS PERSONALIZADOS ---
-# Esto hace que las letras se vean bonitas, como en el panel de la tele
+# --- ESTILOS CSS (Optimizado iPhone 15 Pro Max) ---
 st.markdown("""
     <style>
+    /* Contenedor flexible de letras */
+    .letter-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 6px;
+        margin-bottom: 20px;
+        padding: 5px;
+    }
+    
+    /* Cuadraditos de letras */
     .letter-box {
-        display: inline-block;
-        width: 40px;
-        height: 50px;
-        margin: 5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px 10px; 
+        min-width: 32px; 
+        min-height: 42px;
         background-color: #ffffff;
         color: #000000;
-        text-align: center;
-        font-size: 24px;
-        line-height: 50px;
+        font-size: 20px;
         font-weight: bold;
-        border-radius: 5px;
+        border-radius: 6px;
         border: 2px solid #333;
-        box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+        box-shadow: 2px 2px 4px rgba(0,0,0,0.1);
     }
+
     .space-box {
+        width: 12px;
+        height: auto;
         display: inline-block;
-        width: 20px;
-        height: 50px;
-        margin: 5px;
     }
-    .stButton>button {
+
+    /* Botones del teclado */
+    div.stButton > button {
         width: 100%;
         border-radius: 10px;
-        height: 50px;
-        font-weight: bold;
+        height: 50px !important;
+        font-size: 18px;
+        font-weight: 600;
+        margin-top: 4px;
+        border: 1px solid #ddd;
+    }
+    
+    /* Botón de Comodín especial */
+    .wildcard-btn {
+        border: 2px solid #FFD700 !important;
+        background-color: #fff9c4 !important;
+        color: #b7950b !important;
+    }
+
+    h1 {
+        text-align: center;
+        font-size: 1.6rem !important;
     }
     </style>
 """, unsafe_allow_html=True)
 
 # --- CONFIGURACIÓN DEL JUEGO ---
-# ¡AQUÍ PUEDES CAMBIAR LA FRASE! (Usa mayúsculas)
 SECRET_PHRASE = "NOS VAMOS AL CAMINITO DEL REY"
-HINT = "Es una aventura en las alturas... cerca de Málaga."
 
-# Inicializar variables de estado (memoria del juego)
+# Pista criptica
+HINT_TEXT = "Se necesitan cascos y valentía. (Y aunque sea 28 de diciembre... ¡esto NO es una inocentada!)."
+
+# Estado del juego
 if 'guessed_letters' not in st.session_state:
     st.session_state.guessed_letters = set()
 if 'game_over' not in st.session_state:
@@ -55,85 +84,81 @@ if 'game_over' not in st.session_state:
 
 # --- FUNCIONES ---
 def display_word(phrase, guessed):
-    html_content = "<div>"
+    html_content = '<div class="letter-container">'
     for char in phrase:
         if char == " ":
             html_content += '<div class="space-box"></div>'
         elif char in guessed:
-            html_content += f'<div class="letter-box" style="background-color: #4CAF50; color: white;">{char}</div>'
+            html_content += f'<div class="letter-box" style="background-color: #4CAF50; color: white; border-color: #2e7d32;">{char}</div>'
         else:
             html_content += '<div class="letter-box">_</div>'
     html_content += "</div>"
     return html_content
 
 def check_win(phrase, guessed):
-    # Quitamos los espacios para comprobar
     phrase_no_spaces = phrase.replace(" ", "")
     return all(char in guessed for char in phrase_no_spaces)
 
-# --- INTERFAZ PRINCIPAL ---
+def use_wildcard():
+    # Buscar letras que faltan
+    missing_chars = [char for char in SECRET_PHRASE if char not in st.session_state.guessed_letters and char != " "]
+    if missing_chars:
+        # Elegir una al azar y añadirla
+        new_letter = random.choice(missing_chars)
+        st.session_state.guessed_letters.add(new_letter)
+        st.toast(f"🃏 ¡Comodín usado! Ha salido la letra: {new_letter}", icon="🎉")
 
-st.title("🎉 ¡El Juego del Regalo Misterioso! 🎉")
-st.write("Hola **Mamá y Tata**. Para descubrir vuestro regalo, tenéis que adivinar la frase oculta panel a panel.")
+# --- INTERFAZ ---
 
-# Mostrar el panel
-st.markdown("### El Panel:")
-st.markdown(display_word(SECRET_PHRASE, st.session_state.guessed_letters), unsafe_allow_html=True)
-st.write("") # Espacio
-
-# Mostrar pista si quieren
-with st.expander("¿Necesitáis una pista?"):
-    st.info(HINT)
-
-# --- TECLADO PARA JUGAR ---
 if not st.session_state.game_over:
-    st.write("Selecciona una letra:")
+    st.title("🎁 Misión: 28 de Diciembre 🎁")
+    st.write("Adivinad dónde vamos. ¡Cuidado que hoy es un día peligroso para creerse cosas!")
+
+    # Panel
+    st.markdown(display_word(SECRET_PHRASE, st.session_state.guessed_letters), unsafe_allow_html=True)
+
+    # Zona de Ayudas
+    col_pista, col_comodin = st.columns([1, 1])
     
-    # Alfabeto español
+    with col_pista:
+        with st.expander("🕵️ Ver Pista"):
+            st.info(HINT_TEXT)
+            
+    with col_comodin:
+        # Botón Comodín
+        if st.button("🃏 Usar Comodín"):
+            use_wildcard()
+            st.rerun()
+
+    st.write("---")
+
+# --- TECLADO ---
+if not st.session_state.game_over:
     alphabet = "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ"
-    
-    # Crear columnas para los botones (7 columnas)
-    cols = st.columns(7)
+    cols = st.columns(6) # 6 columnas para mejor tamaño en iPhone Max
     
     for index, letter in enumerate(alphabet):
-        # Deshabilitar botón si ya se ha usado
         disabled = letter in st.session_state.guessed_letters
-        
-        if cols[index % 7].button(letter, key=letter, disabled=disabled):
+        if cols[index % 6].button(letter, key=letter, disabled=disabled):
             st.session_state.guessed_letters.add(letter)
             st.rerun()
 
-    # Botón para resolver (arriesgarse)
-    st.write("---")
-    guess_phrase = st.text_input("¿Ya sabéis lo que es? Escribidlo aquí (opcional):").upper()
-    if guess_phrase:
-        if guess_phrase == SECRET_PHRASE:
-            # Añadir todas las letras para mostrar el panel completo
-            for char in SECRET_PHRASE:
-                if char != " ":
-                    st.session_state.guessed_letters.add(char)
-            st.rerun()
-        else:
-            st.error("¡Casi! Pero esa no es la frase exacta.")
-
-# --- LÓGICA DE VICTORIA ---
+# --- PANTALLA FINAL (VICTORIA) ---
 if check_win(SECRET_PHRASE, st.session_state.guessed_letters):
     st.session_state.game_over = True
     
     st.markdown("---")
-    st.balloons() # Lanza globos
-    time.sleep(1)
-    st.title("🎊 ¡FELICIDADES! 🎊")
-    st.success(f"¡El regalo es: **{SECRET_PHRASE}**!")
+    time.sleep(0.3)
+    st.balloons()
     
-    # Imagen del lugar (Url pública de Wikimedia)
-    st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/Caminito_del_Rey.jpg/800px-Caminito_del_Rey.jpg", 
-             caption="Preparaos para las alturas y las vistas increíbles.")
+    st.markdown(f"<h1 style='color: #4CAF50;'>¡CORRECTO!</h1>", unsafe_allow_html=True)
+    st.markdown(f"<h3 style='text-align: center;'>{SECRET_PHRASE}</h3>", unsafe_allow_html=True)
     
-    st.write("📅 **Fecha:** (Diles la fecha aquí o en persona)")
-    st.write("🎒 **Preparad:** Ropa cómoda y muchas ganas.")
+    st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/Caminito_del_Rey_-_Gorge.jpg/1024px-Caminito_del_Rey_-_Gorge.jpg", 
+             caption="Vértigo, paisajes y adrenalina.", use_column_width=True)
     
-    if st.button("Jugar otra vez"):
-        st.session_state.guessed_letters = set()
-        st.session_state.game_over = False
-        st.rerun()
+    st.success("¡Regalo oficial! No es una inocentada 😉")
+    
+    st.info("📅 **Fecha:** Sábado, 28 de Diciembre.\n\n👟 **Nota:** Llevad calzado deportivo bien atado.")
+
+
